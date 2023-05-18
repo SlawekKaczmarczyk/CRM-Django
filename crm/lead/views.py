@@ -8,7 +8,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.views.generic import ListView, DetailView, DeleteView, UpdateView, CreateView
 from django.views import View
 
-from .forms import AddCommentForm
+from .forms import AddCommentForm, AddFileForm
 from .models import Lead
 from client.models import Client, Comment as ClientComment
 from team.models import Team
@@ -38,6 +38,7 @@ class LeadDetailView(DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['form'] = AddCommentForm()
+        context['fileform'] = AddFileForm()
 
         return context
 
@@ -136,6 +137,21 @@ class ConvertToClientView(View):
         return redirect('leads:list')
 
 
+class AddFileView(View):
+    def post(self, request, *args, **kwargs):
+        pk = kwargs.get('pk')
+
+        form = AddFileForm(request.POST, request.FILES)
+
+        if form.is_valid():
+            team = Team.objects.filter(created_by=self.request.user)[0]
+            file = form.save(commit=False)
+            file.team = team
+            file.lead_id = pk
+            file.created_by = request.user
+            file.save()
+
+        return redirect('leads:detail', pk=pk)
 
 class AddCommentView(View):
     def post(self, request, *args, **kwargs):
