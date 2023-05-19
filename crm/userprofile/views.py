@@ -1,14 +1,14 @@
 from django.shortcuts import render, redirect
-from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.decorators import login_required
 
+from .forms import SignupForm
 from .models import Userprofile
 from team.models import Team
 # Create your views here.
 
 def signup(request):
     if request.method == 'POST':
-        form = UserCreationForm(request.POST)
+        form = SignupForm(request.POST)
 
         if form.is_valid():
             user = form.save()
@@ -21,7 +21,7 @@ def signup(request):
 
             return redirect('/log-in/')
     else:
-        form = UserCreationForm()
+        form = SignupForm()
 
     return render(request, 'userprofile/signup.html', {'form': form})
 
