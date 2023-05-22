@@ -7,6 +7,7 @@ module.exports = {
     'lead/templates/lead/*.html',
     'team/templates/team/*.html',
     'useprofile/templates/useprofile/*.html',
+    'core/templates/core/partials/*.html',
   ],
   theme: {
     extend: {},
