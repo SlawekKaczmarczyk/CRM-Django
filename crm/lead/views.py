@@ -19,7 +19,10 @@ class LeadListView(LoginRequiredMixin,ListView):
     
     def get_queryset(self):
         queryset = super(LeadListView, self).get_queryset()
-        return queryset.filter(created_by=self.request.user, converted_to_client=False)
+        team = self.request.user.userprofile.active_team
+
+        return queryset.filter(team=team, converted_to_client=False)
+
     
 
 
@@ -35,8 +38,9 @@ class LeadDetailView(LoginRequiredMixin,DetailView):
 
     def get_queryset(self):
         queryset = super(LeadDetailView, self).get_queryset()
-        
-        return queryset.filter(created_by=self.request.user, pk=self.kwargs.get('pk'))
+        team = self.request.user.userprofile.active_team
+
+        return queryset.filter(team=team, pk=self.kwargs.get('pk'))
 
 
 
@@ -46,8 +50,9 @@ class LeadDeleteView(LoginRequiredMixin,DeleteView):
     
     def get_queryset(self):
         queryset = super(LeadDeleteView, self).get_queryset()
-        
-        return queryset.filter(created_by=self.request.user, pk=self.kwargs.get('pk'))
+        team = self.request.user.userprofile.active_team
+
+        return queryset.filter(team=team, pk=self.kwargs.get('pk'))
 
     def get(self, request ,*args, **kwargs):
         return self.post(request, *args, **kwargs)
@@ -59,8 +64,9 @@ class LeadUpdateView(LoginRequiredMixin,UpdateView):
     
     def get_queryset(self):
             queryset = super(LeadUpdateView, self).get_queryset()
-            
-            return queryset.filter(created_by=self.request.user, pk=self.kwargs.get('pk'))
+            team = self.request.user.userprofile.active_team
+
+            return queryset.filter(team=team, pk=self.kwargs.get('pk'))
 
     def get_success_url(self):
         return reverse_lazy('leads:list')
@@ -73,7 +79,7 @@ class LeadCreateView(LoginRequiredMixin, CreateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        team = self.request.user.userprofile.active_team
+        team = self.request.user.userprofile.get_active_team()
         context['team'] = team
         context['title'] = 'Add lead'
 
@@ -82,7 +88,7 @@ class LeadCreateView(LoginRequiredMixin, CreateView):
     def form_valid(self, form):
         self.object = form.save(commit=False)
         self.object.created_by = self.request.user
-        self.object.team = self.request.user.userprofile.active_team
+        self.object.team = self.request.user.userprofile.get_active_team()
         self.object.save()
         
         return redirect(self.get_success_url())
@@ -91,8 +97,9 @@ class ConvertToClientView(LoginRequiredMixin,View):
     def get(self, request, *args, **kwargs):
         pk = self.kwargs.get('pk')
 
-        lead = get_object_or_404(Lead, created_by=request.user, pk=pk)
         team = self.request.user.userprofile.active_team
+        lead = get_object_or_404(Lead, team=team, pk=pk)
+        team = self.request.user.userprofile.get_active_team()
  
         client = Client.objects.create(
             name=lead.name,
@@ -128,7 +135,7 @@ class AddFileView(LoginRequiredMixin,View):
 
         if form.is_valid():
             file = form.save(commit=False)
-            file.team = self.request.user.userprofile.active_team
+            file.team = self.request.user.userprofile.get_active_team()
             file.lead_id = pk
             file.created_by = request.user
             file.save()
@@ -143,7 +150,7 @@ class AddCommentView(View):
 
         if form.is_valid():
             comment = form.save(commit=False)
-            comment.team = self.request.user.userprofile.active_team
+            comment.team = self.request.user.userprofile.get_active_team()
             comment.created_by = request.user
             comment.lead_id = pk
             comment.save()
